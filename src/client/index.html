@@ -86,6 +86,22 @@
   .card .rul{display:flex;gap:9px;text-align:left;margin:7px 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
   .card .rul .em{flex:0 0 20px;text-align:center}
   .card .rul b{color:var(--ink)}
+  /* мемориал: статы-чипы, виновник/герой-плашки, пьедестал с полосами вклада */
+  .mstats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 4px}
+  .mstat{font-family:var(--mono);font-size:11px;color:var(--ink-2);background:#00000009;
+    border:1px solid #00000012;border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .mstat b{color:var(--ink);font-size:12.5px}
+  .mrow{display:flex;align-items:center;gap:9px;text-align:left;border-radius:10px;
+    padding:7px 11px;margin:5px 0;font-size:12.5px;color:var(--ink-2)}
+  .mrow b{color:var(--ink);white-space:nowrap}
+  .mrow .mn{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+  .mrow.villain{background:#c0392b14;border:1px solid #c0392b2e;font-size:13px}
+  .mrow.villain b{color:var(--terra-d)}
+  .mrow.hero{background:#2f7d4f12;border:1px solid #2f7d4f2b}
+  .mrow.hero b{color:var(--good)}
+  .mrow .medal{flex:0 0 18px;text-align:center}
+  .mem-note{font-size:11.5px;color:var(--muted);margin:8px 0 0}
+  .mem-more{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:2px 0 0}
 
   /* ---------- coach marks ---------- */
   .coach{position:fixed;z-index:30;max-width:230px;background:#fffef7;border:1px solid var(--chipbr);

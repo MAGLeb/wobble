@@ -415,20 +415,18 @@ function finishPracticeDrop(res){
   } else { p.blocks.push({ dx: res.L, u: 'you' }); p.L = res.L; p.h = res.h; }
   refreshHud();
 }
-// Превью мемориала (фидбек 15.07: «сам не видел мемориал ни разу») - после обвала
-// в практике показываем ТУ ЖЕ карточку, что увидит весь саб после настоящего
+// Превью мемориала (фидбек 15.07) - после обвала в практике та же карточка, что увидит саб
 function practiceEndCard(h){
   const name = S?.me?.name ?? 'you';
-  const mins = Math.max(1, Math.round((Date.now() - (practice?.startTs ?? Date.now())) / 60000));
-  const perfect = practice?.perfect ?? 0;
-  showCard(`<div class="kicker">in memoriam · practice preview</div>
-    <h2>Practice Tower</h2>
-    <div class="big">${h} storeys</div>
-    <p>stood ${mins} minute${mins > 1 ? 's' : ''}</p>
-    <div class="who">toppled by <b>u/${name}</b></div>
-    <p style="font-size:12.5px">👷 1 builder · 🎯 ${perfect} perfect drops</p>
-    <p style="font-size:12px;color:var(--muted)">Topple the <b>shared</b> tower - and this becomes a public post. Forever.</p>
-    <div class="row"><button class="btn" id="cReal">Build for real</button>
+  const m = {
+    towerId: 0, height: h, culprit: name,
+    lifetimeMs: Date.now() - (practice?.startTs ?? Date.now()),
+    buildersCount: 1, perfect: practice?.perfect ?? 0, hero: null,
+    topBuilders: [{ u: name, n: h }],
+  };
+  showCard(memorialHtml(m, { kicker: 'in memoriam · practice preview', title: 'Practice Tower',
+      note: 'Topple the <b>shared</b> tower - and this becomes a public post. Forever.' }) +
+    `<div class="row"><button class="btn" id="cReal">Build for real</button>
     <button class="btn ghost" id="cAgain">Again</button></div>`);
   $('cReal').onclick = () => { hideCard(); exitPractice(); startBuild(); };
   $('cAgain').onclick = () => { hideCard(); startPractice(); };
@@ -449,20 +447,41 @@ function memorialFromArchive(a){
     lifetimeMs: a.fellAt - a.createdAt, buildersCount: by.size, perfect, hero,
     topBuilders: [...by.entries()].map(([u, n]) => ({ u, n })).sort((x, y) => y.n - x.n).slice(0, 5) };
 }
-function showMemorialCard(m, passive){
+// Единый рендер мемориала (настоящий и practice-превью): пьедестал топ-3 с полосами вклада,
+// плашка виновника, плашка героя, статы-чипы (редизайн по фидбеку 15.07)
+function memorialHtml(m, opts = {}){
   const hrs = Math.round(m.lifetimeMs / 3600000);
-  const stood = hrs < 1 ? 'minutes' : hrs < 48 ? hrs + ' hour' + (hrs > 1 ? 's' : '') : Math.round(hrs / 24) + ' days';
-  const builders = m.topBuilders.map(b => 'u/' + b.u + ' ×' + b.n).join(' · ');
-  const stats = ['👷 ' + (m.buildersCount ?? m.topBuilders.length) + ' builders', '🎯 ' + (m.perfect ?? 0) + ' perfect drops'];
-  if (m.hero) stats.push('🦸 best save: u/' + m.hero.u + ' (-' + m.hero.saved + ' lean)');
-  showCard(`<div class="kicker">in memoriam</div>
-    <h2>Tower #${m.towerId}</h2>
+  const stood = m.lifetimeMs < 3600000 ? Math.max(1, Math.round(m.lifetimeMs / 60000)) + ' min'
+    : hrs < 48 ? hrs + ' hour' + (hrs > 1 ? 's' : '') : Math.round(hrs / 24) + ' days';
+  const medals = ['🥇', '🥈', '🥉'];
+  const top = (m.topBuilders ?? []).slice(0, 3);
+  const maxN = Math.max(1, ...top.map(b => b.n));
+  const podium = top.map((b, i) => {
+    const pct = Math.round(b.n / maxN * 88) + 6;
+    return `<div class="mrow" style="background:linear-gradient(90deg,#d6a63a26 ${pct}%,#00000007 ${pct}%)">
+      <span class="medal">${medals[i]}</span><b>u/${b.u}</b>
+      <span class="mn">${b.n} storey${b.n > 1 ? 's' : ''}</span></div>`;
+  }).join('');
+  const others = Math.max(0, (m.buildersCount ?? top.length) - top.length);
+  return `<div class="kicker">${opts.kicker ?? 'in memoriam'}</div>
+    <h2>${opts.title ?? 'Tower #' + m.towerId}</h2>
     <div class="big">${m.height} storeys</div>
-    <p>stood ${stood}</p>
-    <div class="who">toppled by <b>u/${m.culprit}</b></div>
-    <p style="font-size:12.5px">${stats.join(' · ')}</p>
-    <p style="font-size:12px;color:var(--muted)">${builders || ''}</p>
-    <div class="row"><button class="btn" id="cNew">Tower #${m.towerId + 1} begins - build</button>
+    <div class="mstats">
+      <span class="mstat">⏳ stood <b>${stood}</b></span>
+      <span class="mstat">👷 <b>${m.buildersCount ?? top.length}</b> builder${(m.buildersCount ?? 1) > 1 ? 's' : ''}</span>
+      <span class="mstat">🎯 <b>${m.perfect ?? 0}</b> perfect</span>
+    </div>
+    <div class="mrow villain"><span class="medal">💥</span>
+      <span>toppled by <b>u/${m.culprit}</b></span><span class="mn">the final storey</span></div>
+    ${podium}
+    ${others > 0 ? `<div class="mem-more">+ ${others} more builder${others > 1 ? 's' : ''} in the walls</div>` : ''}
+    ${m.hero ? `<div class="mrow hero"><span class="medal">🦸</span>
+      <span>best save: <b>u/${m.hero.u}</b></span><span class="mn">straightened ${m.hero.saved} lean</span></div>` : ''}
+    ${opts.note ? `<div class="mem-note">${opts.note}</div>` : ''}`;
+}
+function showMemorialCard(m, passive){
+  showCard(memorialHtml(m) +
+    `<div class="row"><button class="btn" id="cNew">Tower #${m.towerId + 1} begins - build</button>
     <button class="btn ghost" id="cClose">Close</button></div>`);
   $('cNew').onclick = () => { hideCard(); startBuild(); };
   $('cClose').onclick = () => { hideCard(); };

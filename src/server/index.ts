@@ -11,8 +11,16 @@ app.use(express.json());
 const router = express.Router();
 
 // GameCore на Devvit Redis. Хуки: мемориал-пост от апп-аккаунта (runAs не нужен) строго после фиксации.
+type Memorial = {
+  towerId: number; height: number; culprit: string; title: string;
+  buildersCount?: number; perfect?: number;
+  hero?: { u: string; saved: number } | null;
+  topBuilders?: { u: string; n: number }[];
+};
+
 const core = new GameCore(new DevvitKV(redis), {
-  onMemorial: async (m: { towerId: number; height: number; culprit: string; title: string }) => {
+  onMemorial: async (m: Memorial) => {
+    // 1) отдельный мемориал-пост (архив в ленте саба)
     try {
       const subredditName = context.subredditName;
       if (!subredditName) return;
@@ -23,6 +31,21 @@ const core = new GameCore(new DevvitKV(redis), {
         postData: { type: "memorial", towerId: m.towerId },
       });
     } catch (e) { console.error("memorial post failed", e); }
+    // 2) хроника в треде самого tower-поста (фидбек 15.07): событие видно там, где играют
+    try {
+      const postId = context.postId;
+      if (!postId) return;
+      const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
+      const podium = (m.topBuilders ?? []).slice(0, 3)
+        .map((b, i) => `${medals[i]} u/${b.u} - ${b.n} storey${b.n > 1 ? "s" : ""}`).join("  \n");
+      const hero = m.hero ? `\n\n\u{1F9B8} Best save: u/${m.hero.u} (straightened ${m.hero.saved} lean)` : "";
+      await reddit.submitComment({
+        id: postId,
+        text: `\u{1FAA6} **Tower #${m.towerId} has fallen** at storey ${m.height} - toppled by **u/${m.culprit}**.\n\n` +
+          `${m.buildersCount ?? "?"} builders raised it. Top of the podium:\n\n${podium}${hero}\n\n` +
+          `**Tower #${m.towerId + 1} begins now.** \u{1F9F1}`,
+      });
+    } catch (e) { console.error("memorial comment failed", e); }
   },
 });
 
