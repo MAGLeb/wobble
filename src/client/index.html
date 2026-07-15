@@ -32,10 +32,15 @@
   .chip b{font-size:17px;font-weight:800}
   .chip.tap{cursor:pointer}
   .chip.tap:active{transform:translateY(1px)}
+  .chip.round{width:34px;height:34px;border-radius:50%;padding:0;display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:16px;color:var(--terra-d);font-family:var(--serif)}
   .lean{min-width:150px}
-  .bar{height:7px;border-radius:5px;background:#00000016;overflow:hidden;margin-top:5px}
-  .bar i{display:block;height:100%;width:0;border-radius:5px;
-    background:linear-gradient(90deg,var(--good),var(--gold) 55%,var(--danger));transition:width .15s}
+  /* lean bar: двунаправленный - центр = ровно, заливка растёт в сторону наклона */
+  .bar{height:7px;border-radius:5px;background:#00000016;overflow:hidden;margin-top:5px;position:relative}
+  .bar::before{content:'';position:absolute;left:50%;top:-1px;bottom:-1px;width:2px;
+    background:#00000038;transform:translateX(-50%);z-index:1}
+  .bar i{display:block;position:absolute;top:0;bottom:0;width:0;border-radius:5px;
+    background:var(--good);transition:all .15s}
   .byline{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--chipbg);
     border:1px solid var(--chipbr);border-radius:999px;padding:4px 11px;box-shadow:0 2px 6px #0002}
 
@@ -59,8 +64,9 @@
   .toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);font-weight:800;font-size:15px;
     color:var(--ink);background:var(--chipbg);border:1px solid var(--chipbr);border-radius:13px;
     padding:10px 18px;box-shadow:0 6px 20px #0004;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
-  .wm{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
-    font-family:var(--mono);font-size:10.5px;letter-spacing:.3em;color:#43351f66;text-transform:uppercase;pointer-events:none}
+  .wm{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+    font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.14em;color:#4c3d20;
+    opacity:.8;text-shadow:0 1px 0 #ffffff90;pointer-events:none}
   @media (max-width:560px){.wm{display:none}}
 
   /* ---------- cards (memorial / practice-end / onboarding) ---------- */
@@ -76,6 +82,10 @@
   .card .who{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:#00000009;
     border-radius:10px;padding:8px 10px;margin:10px 0}
   .card .row{display:flex;gap:9px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  /* правила: висячий отступ - эмодзи в колонке, текст ровный */
+  .card .rul{display:flex;gap:9px;text-align:left;margin:7px 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+  .card .rul .em{flex:0 0 20px;text-align:center}
+  .card .rul b{color:var(--ink)}
 
   /* ---------- coach marks ---------- */
   .coach{position:fixed;z-index:30;max-width:230px;background:#fffef7;border:1px solid var(--chipbr);
@@ -108,7 +118,7 @@
     <div class="col">
       <div class="chip"><small id="towerName">Tower #1</small><b id="h">0</b> <span style="font-size:11px">storeys</span></div>
       <div class="chip tap" id="graveChip" style="display:none"><small>fallen towers</small><b id="fallen">0</b> 🪦</div>
-      <div class="chip tap" id="rulesChip">❓ <span style="font-size:11px">how to play</span></div>
+      <div class="chip tap round" id="rulesChip" title="How to play">?</div>
     </div>
     <div class="col r">
       <div class="chip lean" id="leanChip"><small>lean / limit</small><b id="lv" style="font-size:13px">0 / 96</b>

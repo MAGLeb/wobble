@@ -45,6 +45,7 @@ router.get("/api/state", async (_req, res) => {
   res.json(s);
 });
 router.post("/api/claim", async (_req, res) => res.json(await core.claim(await me())));
+router.post("/api/onboarded", async (_req, res) => res.json(await core.setOnboarded(await me())));
 router.post("/api/heartbeat", async (req, res) => res.json(await core.heartbeat(await me(), req.body?.token)));
 router.post("/api/drop", async (req, res) => res.json(await core.drop(await me(), req.body?.token, req.body?.offset)));
 router.get("/api/archive", async (req, res) => {

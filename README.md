@@ -2,6 +2,10 @@
 
 **One tower for the whole subreddit. One tap. Don't be the one who topples it.**
 
+### ▶ [Play the live tower](https://www.reddit.com/r/WobbleTower/comments/1ux6wv4/wobble_one_tower_for_the_whole_subreddit_dont_be/)
+
+![WOBBLE - the shared leaning tower, and the memorial that names whoever topples it](docs/img/memorial.png)
+
 ## The tower
 
 One post is one tower, shared by the whole subreddit. Tap **BUILD**, a storey slides across the top, and you tap again to drop it - land it centered, or tilt the tower a little closer to collapse. Your name is carved on every storey you place, for as long as the tower stands.
@@ -50,3 +54,4 @@ Layout: `src/shared/` - config + tilt math (shared by client & server) · `src/s
 ---
 
 Built for Reddit's **Games with a Hook** hackathon on Devvit Web - one shared tower, playable right inside a Reddit post.
+▶ **Play:** [r/WobbleTower](https://www.reddit.com/r/WobbleTower/comments/1ux6wv4/wobble_one_tower_for_the_whole_subreddit_dont_be/)

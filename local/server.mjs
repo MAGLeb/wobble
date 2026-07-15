@@ -32,6 +32,7 @@ async function api(req, url, user) {
   switch (url.pathname) {
     case '/api/state':     return core.state(user);
     case '/api/claim':     return core.claim(user);
+    case '/api/onboarded': return core.setOnboarded(user);
     case '/api/heartbeat': return core.heartbeat(user, body.token);
     case '/api/drop':      return core.drop(user, body.token, body.offset);
     case '/api/archive': {

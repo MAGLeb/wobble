@@ -15,6 +15,7 @@ const K = {
   archive: (id) => `tower_archive_${id}`,
   energy: (u) => `energy_${u}`,
   stats: (u) => `stats_${u}`,
+  onb: (u) => `onb_${u}`,       // онбординг пройден (localStorage в вебвью не живёт)
 };
 
 const freshTower = (id, now) => ({ id, blocks: [], L: 0, createdAt: now, lastEventSeq: 0 });
@@ -73,6 +74,8 @@ export class GameCore {
         // «не подряд»: сколько мне ждать (0 = можно строить); чужой дроп обнуляет
         repeatMsLeft: (lastB && lastB.u === userId)
           ? Math.max(0, this.cfg.repeatCooldownMs - (now - lastB.ts)) : 0,
+        onboarded: !!(await this.kv.get(K.onb(userId))),
+        name: userId, // username - клиенту для practice-мемориала
       } : null,
       cfg: { oMax: this.cfg.oMax, sweepSpeed: this.cfg.sweepSpeed, sweepRamp: this.cfg.sweepRamp,
              blockW: this.cfg.blockW, blockH: this.cfg.blockH, energyCap: this.cfg.energyCap,
@@ -212,6 +215,12 @@ export class GameCore {
       buildersCount: byUser.size, perfect, hero,
       title: `\u{1F3DB} Tower #${archived.id} fell at storey ${archived.fellHeight} - toppled by u/${archived.culprit}`,
     };
+  }
+
+  /** Онбординг пройден (тур завершён или скипнут). */
+  async setOnboarded(userId) {
+    if (userId) await this.kv.set(K.onb(userId), 1);
+    return { ok: true };
   }
 
   /** Архив павшей башни (мемориал-режим клиента). */
