@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "name": "wobbletower",
+  "version": "0.0.0",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "scripts": {
+    "build:client": "cd src/client && vite build",
+    "build:server": "cd src/server && vite build",
+    "build": "npm run build:client && npm run build:server",
+    "test": "node --test",
+    "type-check": "tsc --noEmit",
+    "local": "node local/server.mjs"
+  },
+  "dependencies": {
+    "@devvit/web": "0.13.7",
+    "express": "5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.1",
+    "@types/node": "^22.12.0",
+    "devvit": "0.13.7",
+    "typescript": "5.8.3",
+    "vite": "7.3.5"
+  }
+}

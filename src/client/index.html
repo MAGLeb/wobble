@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WOBBLE</title>
+<style>
+  :root{
+    --parch:#f3ead2; --parch-2:#e6d8b4; --ink:#43351f; --ink-2:#6d5a37; --muted:#8d7c58;
+    --terra:#c8613c; --terra-d:#9e4a2b; --good:#2f7d4f; --danger:#c0392b; --gold:#d6a63a;
+    --chipbg:#f7efd8e6; --chipbr:#b7a577;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --serif:"Palatino Linotype",Palatino,Georgia,serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{font:14px/1.45 ui-rounded,"SF Pro Rounded",system-ui,"Segoe UI",Roboto,sans-serif;
+    background:#8fbfe0;color:var(--ink);-webkit-font-smoothing:antialiased;user-select:none}
+  #stage{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+
+  /* ---------- HUD ---------- */
+  .hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;
+    justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+  .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .hud-top .col{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .hud-top .col.r{align-items:flex-end}
+  .chip{font-family:var(--mono);background:var(--chipbg);backdrop-filter:blur(4px);
+    border:1px solid var(--chipbr);border-radius:11px;padding:5px 10px;box-shadow:0 2px 6px #0002;
+    font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ink);pointer-events:auto}
+  .chip small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.13em;color:var(--ink-2)}
+  .chip b{font-size:17px;font-weight:800}
+  .chip.tap{cursor:pointer}
+  .chip.tap:active{transform:translateY(1px)}
+  .lean{min-width:150px}
+  .bar{height:7px;border-radius:5px;background:#00000016;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;width:0;border-radius:5px;
+    background:linear-gradient(90deg,var(--good),var(--gold) 55%,var(--danger));transition:width .15s}
+  .byline{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--chipbg);
+    border:1px solid var(--chipbr);border-radius:999px;padding:4px 11px;box-shadow:0 2px 6px #0002}
+
+  /* ---------- bottom controls ---------- */
+  .dock{display:flex;gap:9px;justify-content:center;align-items:center;pointer-events:auto;flex-wrap:wrap}
+  .btn{font:inherit;font-weight:800;border:0;border-radius:13px;padding:13px 22px;cursor:pointer;
+    color:#fff;background:var(--terra);box-shadow:0 5px 0 -1px var(--terra-d),0 8px 16px #0003;
+    letter-spacing:.02em;font-size:15px;transition:transform .06s}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 -1px var(--terra-d)}
+  .btn.ghost{background:var(--parch);color:var(--ink);box-shadow:0 5px 0 -1px #b29d6e,0 8px 16px #0002}
+  .btn:disabled{opacity:.55;box-shadow:none;transform:none;cursor:default}
+  .btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+  .banner{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--chipbg);
+    border:1px solid var(--chipbr);border-radius:999px;padding:7px 14px;box-shadow:0 2px 8px #0002;
+    text-align:center;pointer-events:auto}
+  .banner.warn{border-color:#d59a80;background:#f6e3d8ee}
+  .hint{position:fixed;left:50%;top:20%;transform:translateX(-50%);font-family:var(--mono);
+    font-size:12.5px;color:#fff;background:#43351fd9;padding:8px 16px;border-radius:999px;
+    letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap}
+  .toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);font-weight:800;font-size:15px;
+    color:var(--ink);background:var(--chipbg);border:1px solid var(--chipbr);border-radius:13px;
+    padding:10px 18px;box-shadow:0 6px 20px #0004;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
+  .wm{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.3em;color:#43351f66;text-transform:uppercase;pointer-events:none}
+  @media (max-width:560px){.wm{display:none}}
+
+  /* ---------- cards (memorial / practice-end / onboarding) ---------- */
+  .veil{position:fixed;inset:0;background:#2a1e0eb0;backdrop-filter:blur(3px);display:none;
+    align-items:center;justify-content:center;padding:18px;pointer-events:auto;z-index:20}
+  .veil.show{display:flex}
+  .card{background:var(--parch);border:1px solid #cbb888;border-radius:18px;max-width:400px;width:100%;
+    padding:22px 22px 18px;box-shadow:0 24px 60px -12px #000a,0 2px 0 #ffffff80 inset;text-align:center}
+  .card .kicker{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--terra-d)}
+  .card h2{font-family:var(--serif);font-size:24px;margin:6px 0 2px;color:#4c3d20;letter-spacing:.01em;text-wrap:balance}
+  .card .big{font-family:var(--serif);font-size:40px;font-weight:700;color:var(--terra-d);margin:2px 0}
+  .card p{color:var(--ink-2);font-size:13.5px;margin:8px 0}
+  .card .who{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:#00000009;
+    border-radius:10px;padding:8px 10px;margin:10px 0}
+  .card .row{display:flex;gap:9px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+
+  /* ---------- coach marks ---------- */
+  .coach{position:fixed;z-index:30;max-width:230px;background:#fffef7;border:1px solid var(--chipbr);
+    border-radius:13px;padding:11px 13px;font-size:13px;color:var(--ink);box-shadow:0 10px 30px #0005;display:none}
+  .coach.show{display:block}
+  .coach b{color:var(--terra-d)}
+  .coach .ok{font-family:var(--mono);font-size:11px;color:var(--terra-d);cursor:pointer;font-weight:700}
+  .coach .foot{display:flex;align-items:center;gap:14px;margin-top:9px}
+  .coach .step{font-family:var(--mono);font-size:10px;color:var(--muted);margin-right:auto}
+  .coach .skip{color:var(--muted)}
+  /* подсветка элемента, о котором говорит коуч-марка */
+  .spot{outline:3px solid var(--terra);outline-offset:2px;animation:spotPulse 1.1s ease-in-out infinite}
+  @keyframes spotPulse{50%{outline-offset:5px;outline-color:var(--gold)}}
+  /* тревога: крен у предела */
+  .chip.alarm{border-color:var(--danger);animation:alarmPulse 0.9s ease-in-out infinite}
+  @keyframes alarmPulse{50%{box-shadow:0 0 0 4px #c0392b33,0 2px 6px #0002}}
+  /* тултип «кто поставил этаж» */
+  #blockTip{position:fixed;z-index:15;display:none;font-family:var(--mono);font-size:11.5px;color:var(--ink);
+    background:var(--chipbg);border:1px solid var(--chipbr);border-radius:999px;padding:4px 10px;
+    box-shadow:0 3px 10px #0003;pointer-events:none;white-space:nowrap}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div class="wm" id="wm">WOBBLE</div>
+
+<div class="hud">
+  <div class="hud-top">
+    <div class="col">
+      <div class="chip"><small id="towerName">Tower #1</small><b id="h">0</b> <span style="font-size:11px">storeys</span></div>
+      <div class="chip tap" id="graveChip" style="display:none"><small>fallen towers</small><b id="fallen">0</b> 🪦</div>
+      <div class="chip tap" id="rulesChip">❓ <span style="font-size:11px">how to play</span></div>
+    </div>
+    <div class="col r">
+      <div class="chip lean" id="leanChip"><small>lean / limit</small><b id="lv" style="font-size:13px">0 / 96</b>
+        <div class="bar"><i id="lbar"></i></div></div>
+      <div class="chip" id="energyChip"><small>your bricks</small><b id="energy">–</b> <span id="regen" style="font-size:10.5px;color:var(--ink-2)"></span></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+    <div class="byline" id="byline" style="display:none"></div>
+    <div class="banner" id="banner" style="display:none"></div>
+    <div class="dock" id="dock">
+      <button class="btn" id="buildBtn">🧱 BUILD</button>
+      <button class="btn ghost" id="tryBtn">Practice</button>
+    </div>
+    <div class="dock" id="pdock" style="display:none">
+      <button class="btn" id="pRealBtn">🧱 Build for real</button>
+      <button class="btn ghost" id="pExitBtn">✕ Exit</button>
+    </div>
+  </div>
+</div>
+
+<div class="hint" id="hint">TAP when it's centered</div>
+<div id="blockTip"></div>
+<div class="toast" id="toast"></div>
+
+<div class="veil" id="veil"><div class="card" id="card"></div></div>
+
+<div class="coach" id="coach"><div id="coachText"></div>
+  <div class="foot"><span class="step" id="coachStep">1 / 3</span>
+    <span class="ok skip" id="coachSkip">SKIP</span><span class="ok" id="coachOk">GOT IT →</span></div></div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
