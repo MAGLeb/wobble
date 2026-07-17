@@ -47,6 +47,20 @@ const core = new GameCore(new DevvitKV(redis), {
       });
     } catch (e) { console.error("memorial comment failed", e); }
   },
+  // флаир = публичный леджер прогресса (паттерн r/honk): виден у ника в каждом комменте саба
+  onFlair: async (u: string, st: { placed: number; survived: number; caused: number }) => {
+    try {
+      const subredditName = context.subredditName;
+      if (!subredditName || !u) return;
+      await reddit.setUserFlair({
+        subredditName,
+        username: u,
+        text: `\u{1F9F1} ${st.placed} storey${st.placed === 1 ? "" : "s"} · \u{1F6E1} ${st.survived} survived · \u{1F4A5} ${st.caused} toppled`,
+        backgroundColor: "#f3ead2",
+        textColor: "dark",
+      });
+    } catch (e) { console.error("flair failed", e); }
+  },
 });
 
 // username: на блоках и в мемориалах - имена, не t2-id; кешируем в redis

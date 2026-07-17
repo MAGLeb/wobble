@@ -4,6 +4,8 @@
 
 ### ▶ [Play the live tower](https://www.reddit.com/r/WobbleTower/comments/1ux6wv4/wobble_one_tower_for_the_whole_subreddit_dont_be/)
 
+![WOBBLE - drop a storey, watch it lean, and the memorial that names who topples it](docs/img/wobble-demo.gif)
+
 ## The tower
 
 One post is one tower, shared by the whole subreddit. Tap **BUILD**, a storey slides across the top, and you tap again to drop it - land it centered, or tilt the tower a little closer to collapse. Your name is carved on every storey you place, for as long as the tower stands.
@@ -48,6 +50,12 @@ npm run build && npx devvit upload && npx devvit install <subreddit>
 
 Layout: `src/shared/` - config + tilt math (shared by client & server) · `src/server/` - GameCore over Redis · `src/client/` - the webview · `local/` - the dev server (not shipped).
 </details>
+
+## What's next: Tower Wars ⚔️
+
+Every community already has its own tower - next, we let them race. **Subreddit vs subreddit seasons** ("r/A 47 : 52 r/B" right on the cover), a **global hall of fame** for the tallest standing tower and the loudest collapse of the week, and **raid memorials** that name the attacker and their home subreddit. The plumbing is already there: one tower per installation + Devvit's app-global Redis.
+
+*(Internal roadmap with research, scoring and gates: [docs/15-tower-wars-roadmap.md](docs/15-tower-wars-roadmap.md). Code frozen until judging ends July 27.)*
 
 ---
 

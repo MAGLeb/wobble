@@ -1,9 +1,12 @@
 "use strict";
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } },
                 set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
-window.onerror = (m, s, l, c) => { const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:40%;left:8px;right:8px;z-index:99;background:#fff;color:#900;font:12px monospace;padding:8px;border-radius:8px';
-  d.textContent = 'ERR: ' + m + ' @' + l + ':' + c; document.body.appendChild(d); };
+// диагностика ошибок - только под ?debug=1 (красная команда: красная плашка в проде = слоп)
+if (new URLSearchParams(location.search).get('debug')){
+  window.onerror = (m, s, l, c) => { const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:40%;left:8px;right:8px;z-index:99;background:#fff;color:#900;font:12px monospace;padding:8px;border-radius:8px';
+    d.textContent = 'ERR: ' + m + ' @' + l + ':' + c; document.body.appendChild(d); };
+}
 /* ================= net ================= */
 const qs = new URLSearchParams(location.search);
 const ME = qs.get('u'); // null = logged out (в Devvit: context.userId)
@@ -144,9 +147,13 @@ function slideOffset(t, crook){
   return CFG.oMax * Math.max(-1, Math.min(1, raw));
 }
 const sweepMult = (crook) => 1 + .7 * Math.min(1, crook || 0);
+// «дыхание» свипа (фидбек 15.07 «метроном выучивается»): скорость плывёт ±18%
+// медленной волной от фазы - ритм каждого захода чуть другой; тап честен (берёт факт. позицию)
+const sweepBreath = (swct) => 1 + .18 * Math.sin(swct * .37);
 function drawTowerFull(blocks, L, opts = {}){
   const gy = groundY(), top = blocks.length;
-  const scale = Math.max(.12, Math.min(1, (gy - 60) / ((top + 2) * BH())));
+  const topPad = W < 560 ? 130 : 60; // на телефоне вершина не прячется за чипами
+  const scale = Math.max(.12, Math.min(1, (gy - topPad) / ((top + 2) * BH())));
   const cx = W / 2;
   const lim = curLimit(); const danger = Math.min(1, Math.abs(L) / lim);
   const high = top > 12;
@@ -172,12 +179,15 @@ function drawTowerFull(blocks, L, opts = {}){
 // Возвращает всё, что нужно анимации падения (slideY, targetY, topY).
 function buildLayout(top){
   const gy = groundY();
-  const K = Math.min(top, Math.max(4, Math.floor((H * .5) / BH())));
+  // резерв под HUD-чипы: на телефоне они выше и шире - слайд НЕ должен летать под ними (фидбек 15.07)
+  const topReserve = W < 560 ? 185 : 118;
+  const usable = gy - topReserve - BH() * 4.6;                  // место под кран+слайд над пачкой
+  const K = Math.min(top, Math.max(3, Math.floor(usable / BH())));
   const bottomVisible = top <= K;
   const stackBase = gy - (bottomVisible ? BH() : 0);            // низ видимой пачки (над плинтусом)
   const topY = top ? stackBase - (K - .5) * BH() : gy - BH() * .5; // центр верхнего этажа (или плинтуса)
   const targetY = topY - BH();                                  // куда ляжет новый этаж
-  const slideY = Math.max(64, targetY - BH() * 3.2);            // скользящий этаж - высоко над башней
+  const slideY = Math.max(topReserve + BH() * .6, targetY - BH() * 3.2); // слайд ниже чипов, выше башни
   return { gy, K, bottomVisible, stackBase, topY, slideY, targetY };
 }
 // Качание стека в стройке (фидбек 15.07): кривая башня ходит под краном - целиться труднее.
@@ -261,6 +271,7 @@ function refreshHud(){
   if (!S) return;
   const t = (MODE === 'practice' && practice) ? { id: 'P', h: practice.h, L: practice.L, limit: limitFor(practice.h, PCFG()) } : S.tower;
   $('towerName').textContent = MODE === 'practice' ? 'PRACTICE' : ('Tower #' + t.id);
+  if (MODE === 'practice'){ $('energy').textContent = 'free'; $('regen').textContent = ''; } // практика не тратит кирпичи
   $('h').textContent = t.h;
   // направление наклона стрелкой + двунаправленный бар от центра (фидбек 15.07: минус неясен)
   const ratio = Math.abs(t.L) / t.limit;
@@ -278,15 +289,14 @@ function refreshHud(){
   if (S.me){
     $('energy').textContent = '×' + S.me.energy;
     $('regen').textContent = S.me.energy < CFG.energyCap && S.me.msToNext ? '· next ' + fmtMs(S.me.msToNext) : '';
-    // приоритет сообщений на кнопке (фикс противоречия 15.07): нет кирпичей > «не подряд» > BUILD
-    $('buildBtn').textContent = S.me.energy <= 0
-      ? '🧱 out of bricks · next ' + fmtMs(S.me.msToNext)
-      : S.me.repeatMsLeft > 0
-        ? '⏳ ' + fmtMs(S.me.repeatMsLeft) + ' · or after next builder'
-        : '🧱 BUILD';
+    // приоритет: нет кирпичей > «не подряд» > BUILD; статусы - тихой плашкой, не гигантской кнопкой
+    const bb = $('buildBtn');
+    if (S.me.energy <= 0){ bb.textContent = '🧱 next brick ' + fmtMs(S.me.msToNext); bb.classList.add('info'); }
+    else if (S.me.repeatMsLeft > 0){ bb.textContent = '⏳ ' + fmtMs(S.me.repeatMsLeft) + ' or next builder'; bb.classList.add('info'); }
+    else { bb.textContent = '🧱 BUILD'; bb.classList.remove('info'); }
   } else {
     $('energy').textContent = '-'; $('regen').textContent = '';
-    $('buildBtn').textContent = '🧱 LOG IN & BUILD';
+    $('buildBtn').textContent = '🧱 LOG IN & BUILD'; $('buildBtn').classList.remove('info');
   }
   const last = S.tower.blocks[S.tower.blocks.length - 1];
   if (last && MODE === 'cover'){ $('byline').style.display = '';
@@ -332,6 +342,7 @@ async function startBuild(){
   const r = await api('/api/claim', {});
   if (r.ok){
     build = { token: r.token, frozen: r.frozen, swct: 0, blocks: S.tower.blocks.slice(), dropped: false, anim: null };
+    practice = null; $('pdock').style.display = 'none'; // автозахват из очереди мог застать нас в practice
     MODE = 'build'; $('dock').style.display = 'none'; $('banner').style.display = 'none';
     $('wm').style.display = 'none'; // кран не наезжает на надпись (фидбек 15.07)
     refreshHud(); hint(true, 'TAP when it’s centered');
@@ -393,6 +404,7 @@ function finishDrop(res){
 
 /* ---------- practice ---------- */
 function startPractice(){
+  clearTimeout(startBuild._t); // не телепортировать из practice автозахватом очереди (красная команда)
   practice = { blocks: [], L: 0, h: 0, swct: 0, oSum: 0, perfect: 0, startTs: Date.now(),
     dropped: false, anim: null, fallers: null, fallT: 0 };
   MODE = 'practice'; $('dock').style.display = 'none'; $('pdock').style.display = '';
@@ -431,7 +443,12 @@ function practiceEndCard(h){
   $('cReal').onclick = () => { hideCard(); exitPractice(); startBuild(); };
   $('cAgain').onclick = () => { hideCard(); startPractice(); };
 }
-function exitPractice(){ practice = null; MODE = 'cover'; $('dock').style.display = ''; $('pdock').style.display = 'none'; $('wm').style.display = ''; hint(false); refreshHud(); }
+function exitPractice(){
+  if (MODE === 'build') return; // страховка: в стройке practice-кнопок быть не должно
+  clearTimeout(startBuild._t);
+  practice = null; MODE = 'cover'; $('dock').style.display = ''; $('pdock').style.display = 'none';
+  $('wm').style.display = ''; hint(false); refreshHud();
+}
 
 /* ---------- memorial ---------- */
 function memorialFromArchive(a){
@@ -480,8 +497,11 @@ function memorialHtml(m, opts = {}){
     ${opts.note ? `<div class="mem-note">${opts.note}</div>` : ''}`;
 }
 function showMemorialCard(m, passive){
+  // на старых архивах «следующая» башня давно не №+1 - зовём строить ТЕКУЩУЮ
+  const cur = S?.tower?.id ?? (m.towerId + 1);
+  const label = cur === m.towerId + 1 ? `Tower #${cur} begins - build` : `Build Tower #${cur}`;
   showCard(memorialHtml(m) +
-    `<div class="row"><button class="btn" id="cNew">Tower #${m.towerId + 1} begins - build</button>
+    `<div class="row"><button class="btn" id="cNew">${label}</button>
     <button class="btn ghost" id="cClose">Close</button></div>`);
   $('cNew').onclick = () => { hideCard(); startBuild(); };
   $('cClose').onclick = () => { hideCard(); };
@@ -525,6 +545,7 @@ function maybeCoach(){
   // флаг «обучен» живёт на СЕРВЕРЕ (localStorage вебвью не переживает сессию - фидбек 15.07);
   // для логаута - localStorage как best-effort
   if (qs.get('nocoach') || S?.me?.onboarded || store.get('wobble_onboarded') || !S) return;
+  if (S.postMeta && S.postMeta.type === 'memorial') return; // на мемориал-посте туру не место
   coachI = 0; showCoach();
 }
 function showCoach(){
@@ -561,7 +582,7 @@ function frame(now){
       dangerVignette(Math.abs(S.tower.L) / S.tower.limit); }
     if (popT > 0) popT -= dt;
   } else if (MODE === 'build' && build){
-    const spd = (CFG.sweepSpeed + build.blocks.length * CFG.sweepRamp) * sweepMult(build.frozen.crook);
+    const spd = (CFG.sweepSpeed + build.blocks.length * CFG.sweepRamp) * sweepMult(build.frozen.crook) * sweepBreath(build.swct);
     if (!build.dropped) build.swct += spd * dt;
     if (build.anim){
       const a = build.anim;
@@ -592,7 +613,7 @@ function frame(now){
         shakeT = Math.max(shakeT, .7); spawnDust(W/2, groundY(), 26, true); }
       if (p.fallT > 1.9){ const hh = p.h + 1; p.fallers = null; practiceEndCard(hh); p.blocks = []; p.L = 0; p.h = 0; }
     } else {
-      const spd = (c.sweepSpeed + p.blocks.length * c.sweepRamp) * sweepMult(pCrook(p));
+      const spd = (c.sweepSpeed + p.blocks.length * c.sweepRamp) * sweepMult(pCrook(p)) * sweepBreath(p.swct);
       if (!p.anim) p.swct += spd * dt;
       if (p.anim){
         const done = drawFallingDrop(p.blocks, p.anim, dt);
@@ -638,15 +659,18 @@ function spawnDust(x, y, n, big){
     vx: (Math.random()*2-1) * (big ? 90 : 40), vy: -(20 + Math.random() * (big ? 90 : 40)),
     r: 3 + Math.random() * (big ? 9 : 5), life: .6 + Math.random() * .5 });
 }
-function updDrawDust(dt){
+function updDust(dt){
   for (const p of dust){ p.life -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 60*dt; }
   dust = dust.filter(p => p.life > 0);
+}
+function drawDust(){
   for (const p of dust){
     ctx.globalAlpha = Math.max(0, Math.min(.55, p.life));
     ctx.fillStyle = '#d6c396'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
+function updDrawDust(dt){ updDust(dt); drawDust(); }
 
 // Падение нового этажа: строго вертикально, с гравитацией, ровно на вершину башни.
 // anim = {x: итоговый dx (клэмп сервера), y: тек. Y, vy, res}; true = приземлился.
@@ -736,30 +760,46 @@ function shotStory(){
   $('leanChip').classList.add('alarm');
 
   let sd = 7; const rnd = () => (sd = (sd * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+  Math.random = rnd; // детерминизм пыли/тряски между кадрами GIF (dev-страница одноразовая)
   const blocks = Array.from({ length: 24 }, (_, i) => ({ dx: Math.sin(i * 1.3) * 9 + i * 2.1, u: 'x' }));
   const frozen = { h: 24, L: 74, crook: .55 };
   const spd = (CFG.sweepSpeed + 24 * CFG.sweepRamp) * sweepMult(.55);
   const T = parseFloat(qs.get('t') || '0');
-  const TAP = 2.0, FALLDUR = .45, CRASH = 2.45, MEMO = 4.35;
+  const TAP = 2.4, FALLDUR = .45, CRASH = 2.85, MEMO = 4.9;
   resize();
-  if (T < TAP){                       // фаза 1: целимся - башня ходит, слайд едет
+  if (T < TAP){                       // фаза 1: целимся - башня ходит, слайд едет (~2.4с)
     sky();
     drawTowerBuild(frozen, blocks, T * spd, true, .55, Math.sin(T * 3.1) * 10);
     dangerVignette(.92);
-  } else if (T < CRASH){              // фаза 2: тап - блок падает
+  } else if (T < CRASH){              // фаза 2: тап (вспышка-кольцо) - блок падает
     const o = slideOffset(TAP * spd, .55);
     const lay0 = buildLayout(24);
     const k = Math.min(1, (T - TAP) / FALLDUR);
+    const sx = W / 2 + blocks[23].dx + o;
     sky();
     drawTowerBuild(frozen, blocks, TAP * spd, false, .55, 0);
-    storey(W / 2 + blocks[23].dx + o, lay0.slideY + (lay0.targetY - lay0.slideY) * k * k, BW(), BH(), { hi: true });
+    storey(sx, lay0.slideY + (lay0.targetY - lay0.slideY) * k * k, BW(), BH(), { hi: true });
+    if (T < TAP + .28){               // кольцо тапа
+      const kk = (T - TAP) / .28;
+      ctx.strokeStyle = 'rgba(255,255,255,' + (1 - kk).toFixed(2) + ')'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(sx, lay0.slideY, 16 + kk * 30, 0, 7); ctx.stroke();
+    }
     dangerVignette(.95);
-  } else {                            // фазы 3-4: обвал (со slow-mo) и мемориал
+  } else {                            // фазы 3-4: обвал (slow-mo, пыль, тряска) и мемориал
     startFall([...blocks, { dx: blocks[23].dx + 16 }], 90, rnd, true);
-    const tt = Math.min(T, 6.5) - CRASH;
-    const eff = Math.min(tt, .5) * .3 + Math.max(0, tt - .5);
-    for (let i = 0; i < eff * 60; i++) updFall(1 / 60);
-    sky(); drawFall();
+    const tt = Math.min(T, 7.5) - CRASH;
+    let simT = 0, dusted = false;
+    while (simT < tt){
+      updFall(simT < .5 ? (1 / 60) * .3 : 1 / 60);
+      simT += 1 / 60;
+      if (!dusted && simT >= .55){ dusted = true; spawnDust(W / 2, groundY(), 26, true); }
+      updDust(1 / 60);
+    }
+    const shakeAmp = (tt > .45 && tt < 1.15) ? 11 * (1.15 - tt) : 0;
+    ctx.save();
+    if (shakeAmp > 0) ctx.translate((rnd() * 2 - 1) * shakeAmp, (rnd() * 2 - 1) * shakeAmp);
+    sky(); drawFall(); drawDust();
+    ctx.restore();
     if (T >= MEMO) showMemorialCard({ towerId: 3, height: 25, culprit: 'leaning_lena',
       lifetimeMs: 2 * 86400e3, buildersCount: 5, perfect: 6, hero: { u: 'arch_wizard', saved: 11 },
       topBuilders: [{ u: 'mira_the_mason', n: 9 }, { u: 'stone_cold_sam', n: 7 }, { u: 'arch_wizard', n: 5 }, { u: 'leaning_lena', n: 4 }] });

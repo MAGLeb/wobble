@@ -1,7 +1,9 @@
 # Devpost submission copy - WOBBLE
 
+> **Status: SUBMITTED** (deadline 2026‑07‑15 18:00 PT). Kept as the record of what was
+> submitted and the reusable copy for the app listing / future updates.
+
 Paste‑ready English text for the Devpost form. Fill the `<…>` placeholders before submitting.
-Deadline: **2026‑07‑15, 18:00 PT** (= 2026‑07‑16 03:00 GMT+2).
 
 ---
 
@@ -51,7 +53,7 @@ Reddit's Developer Platform (Devvit Web) with an Express server and Redis. The s
 Designing a communal-object game where failure becomes the best content; using Devvit's atomic Redis primitives for fair turn-taking; and balancing a system that is forgiving of one honest mistake but brutal to carelessness.
 
 ## What's next
-A full all-time leaderboard - top builders, longest-standing towers, and the most (and least) destructive players - plus deeper per-tower stats; real Reddit flair ranks for master builders; tower themes beyond the default Leaning-Tower-of-Pisa look; and shareable memorial cards.
+**Tower Wars: subreddit vs subreddit.** Every community already has its own tower - next we let them race: weekly seasons ("r/A 47 : 52 r/B" on the cover), a global hall of fame for the tallest standing tower and the loudest collapse, and raid memorials that name the attacker and their home subreddit. Plus deeper per-tower stats, tower themes beyond the default Leaning-Tower-of-Pisa look, and shareable memorial cards.
 ```
 
 ---

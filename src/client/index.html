@@ -53,6 +53,9 @@
   .btn.ghost{background:var(--parch);color:var(--ink);box-shadow:0 5px 0 -1px #b29d6e,0 8px 16px #0002}
   .btn:disabled{opacity:.55;box-shadow:none;transform:none;cursor:default}
   .btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  /* статус (нет кирпичей / кулдаун): информация, а не действие - компактно и тихо */
+  .btn.info{background:var(--parch-2);color:var(--ink-2);font-weight:700;font-size:13px;
+    padding:10px 14px;box-shadow:0 3px 0 -1px #b29d6e;font-family:var(--mono)}
 
   .banner{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--chipbg);
     border:1px solid var(--chipbr);border-radius:999px;padding:7px 14px;box-shadow:0 2px 8px #0002;
@@ -67,7 +70,17 @@
   .wm{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
     font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.14em;color:#4c3d20;
     opacity:.8;text-shadow:0 1px 0 #ffffff90;pointer-events:none}
-  @media (max-width:560px){.wm{display:none}}
+  @media (max-width:560px){
+    .wm{display:none}
+    .chip{font-size:11px;padding:4px 8px;border-radius:9px}
+    .chip small{font-size:8px}
+    .chip b{font-size:14px}
+    .lean{min-width:124px}
+    .chip.round{width:30px;height:30px;font-size:14px}
+    .btn{padding:11px 15px;font-size:14px}
+    .btn.info{font-size:12px;padding:9px 12px}
+    .dock{gap:7px}
+  }
 
   /* ---------- cards (memorial / practice-end / onboarding) ---------- */
   .veil{position:fixed;inset:0;background:#2a1e0eb0;backdrop-filter:blur(3px);display:none;

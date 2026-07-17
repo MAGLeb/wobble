@@ -105,7 +105,7 @@ export class GameCore {
     const firstIsMe = queue.length === 0 || myPos === 0;
     if (firstIsMe) {
       const token = Math.random().toString(36).slice(2) + now.toString(36);
-      const lockVal = { user: userId, token, expiresAt: now + this.cfg.lockTtlMs };
+      const lockVal = { user: userId, token, claimedAt: now, expiresAt: now + this.cfg.lockTtlMs };
       const got = await this.kv.set(K.lock, lockVal, { nx: true, expirationMs: this.cfg.lockTtlMs });
       if (got) {
         if (myPos === 0) { queue.shift(); await this.kv.set(K.next, queue); } // моя бронь употреблена
@@ -126,11 +126,14 @@ export class GameCore {
              position: pos || null, queueLen: queue.length, youAreNext: pos === 1 };
   }
 
-  /** Продлить лок, пока игрок целится. */
+  /** Продлить лок, пока игрок целится. Потолок 90с от claim: открытый на прицеливании
+   *  телефон не держит башню вечно (красная команда 15.07). */
   async heartbeat(userId, token) {
+    const now = this.now();
     const lock = await this.kv.get(K.lock);
     if (!lock || lock.user !== userId || lock.token !== token) return { ok: false };
-    const expiresAt = this.now() + this.cfg.lockTtlMs;
+    if (now - (lock.claimedAt ?? now) > 90_000) return { ok: false, reason: 'turn_too_long' };
+    const expiresAt = now + this.cfg.lockTtlMs;
     await this.kv.set(K.lock, { ...lock, expiresAt }, { expirationMs: this.cfg.lockTtlMs });
     return { ok: true, expiresAt };
   }
