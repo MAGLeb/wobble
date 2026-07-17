@@ -1,14 +1,16 @@
 # WOBBLE 🏛
 
+![WOBBLE - one leaning tower for the whole subreddit; every storey carries a member's name](docs/img/hero.png)
+
 **One tower for the whole subreddit. One tap. Don't be the one who topples it.**
 
 ### ▶ [Play the live tower](https://www.reddit.com/r/WobbleTower/comments/1ux6wv4/wobble_one_tower_for_the_whole_subreddit_dont_be/)
 
-![WOBBLE - drop a storey, watch it lean, and the memorial that names who topples it](docs/img/wobble-demo.gif)
-
 ## The tower
 
 One post is one tower, shared by the whole subreddit. Tap **BUILD**, a storey slides across the top, and you tap again to drop it - land it centered, or tilt the tower a little closer to collapse. Your name is carved on every storey you place, for as long as the tower stands.
+
+![A storey drops, the tower leans, and the community's collapse becomes a memorial](docs/img/wobble-demo.gif)
 
 Miss too much and the whole thing comes down for everyone - and the game posts a memorial that **names whoever dropped the fatal storey**. Then a fresh tower rises, and it starts again.
 

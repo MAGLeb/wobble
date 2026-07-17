@@ -13,7 +13,7 @@ stable - don't renumber.
 | [14-wobble-plan.md](14-wobble-plan.md) | **Engineering** - architecture, Redis keys, the turn-lock protocol, camera-per-mode, MVP line. Source of truth for `core.mjs`. |
 | [15-tower-wars-roadmap.md](15-tower-wars-roadmap.md) | **What's next (post-hackathon)** - subreddit-vs-subreddit Tower Wars: research, scoring, `redis.global`, and the staged roadmap with gates. |
 | [DEVPOST-WOBBLE.md](DEVPOST-WOBBLE.md) | The Devpost submission copy (paste-ready English) and the internal submission checklist. |
-| [img/](img/) | Gallery assets - screenshots (`build`, `cover_*`, `memorial`, `practice`) and the demo GIF. |
+| [img/](img/) | Gallery assets - the `hero` cover art, screenshots (`build`, `cover_*`, `memorial`, `practice`) and the demo GIF. |
 
 For the game overview, build/deploy commands and structure, see the top-level
 [README.md](../README.md). Internal Russian dev notes live in [../DEV.ru.md](../DEV.ru.md).
